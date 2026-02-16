@@ -10,7 +10,8 @@ const trackStatusList = document.getElementById('trackStatusList');
 // Основной обработчик кнопки "Отследить"
 trackButton.addEventListener('click', () => {
     if (!trackNumber.value || trackNumber.value === '') {
-        alert('Заполните номер отправления')
+        alert('Заполните номер отправления');
+        return;
     }
 
     // Временная проверка, если результат не найден
@@ -18,6 +19,7 @@ trackButton.addEventListener('click', () => {
         // скрываем блок, если показывается
         alert('К сожалению, мы не смогли найти отправление по данному номеру');
         trackResult.classList.toggle('is-visible', false);
+        trackNumber.value = "";
         return;
     }
 

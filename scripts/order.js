@@ -10,6 +10,7 @@ const submitButton = document.getElementById('submit');
 const distanceValue = document.getElementById('distanceValue');
 const durationValue = document.getElementById('durationValue');
 const rateValue = document.getElementById('rateValue');
+const speedValue = document.getElementById('speedValue');
 const totalValue = document.getElementById('totalValue');
 
 // элементы формы заявки
@@ -40,7 +41,8 @@ const MIN_BY_SIZE = { xs: 149, s: 199, m: 249, l: 349, xl: 499, max: 999 };
 ymaps.ready(() => {
     // Создаем карту с центром в Москве.
     map = new ymaps.Map('map', {
-        center: [55.751244, 37.618423],
+        // center: [55.751244, 37.618423], // Москва
+        center: [41.184022, 69.164708], // Ташкент
         zoom: 5,
         controls: ['zoomControl']
     });
@@ -61,7 +63,7 @@ ymaps.ready(() => {
 
     // Дизейблим кнопку Рассчитать если одного или двух значений нет
     [fromInput, toInput].forEach((input) => {
-        input.addEventListener('change', () => {
+        input.addEventListener('input', () => {
             calcButton.disabled = !(fromInput.value && toInput.value);
             renderInfo();
         });
@@ -75,7 +77,7 @@ calcButton.addEventListener('click', () => {
         map.geoObjects.remove(mapRoute);
         mapRoute = null;
     }
-
+    calcButton.disabled = false;
     // Создаем новый маршрут по введенным точкам.
     mapRoute = new ymaps.multiRouter.MultiRoute({ referencePoints: [fromInput.value, toInput.value] }, { boundsAutoApply: false });
 
@@ -100,7 +102,7 @@ calcButton.addEventListener('click', () => {
             // Просчитываем длительность доставки
             let duration = Math.min(30, 1 + Math.ceil(km / 80));
 
-            // Увеличиваем на 15% и сокращаем время на 30%
+            // Увеличиваем стоимость на 15% и сокращаем время на 30%
             const speed = document.querySelector('.main-speed-card.is-active').dataset.value;
             if (speed === 'fast') {
                 total = Math.ceil(total * 1.15);
@@ -123,7 +125,7 @@ calcButton.addEventListener('click', () => {
                 distanceText: `${calculation.distance} км`,
                 durationText: `${calculation.duration} дн.`,
                 rateText: `${calculation.rate} ₽/км`,
-                // speedText: `Скорость доставки ${calculation.speed}`,
+                speedText: `${calculation.speed}`,
                 totalText: calculation.total
             });
 
@@ -144,7 +146,13 @@ function renderInfo(info = null) {
     distanceValue.textContent = info ? info['distanceText'] : '—';
     durationValue.textContent = info ? info['durationText'] : '—';
     rateValue.textContent = info ? info['rateText'] : '—';
+    speedValue.textContent = info ? info['speedText'] : '—';
     totalValue.textContent = info ? info['totalText'] : '—';
+
+    if (info === null) {
+        toggleOrderSuccess(true);
+        submitButton.disabled = true;
+    }
 }
 
 // Вывод ошибки и сброс подсчетов в случае возникновения ошибки
@@ -152,6 +160,7 @@ function failedCalculation() {
     calculation = null;
     renderInfo();
     alert('Не удалось построить маршрут. Проверьте адреса и выбранные параметры.');
+    calcButton.disabled = true;
     submitButton.disabled = true;
 }
 
@@ -173,7 +182,7 @@ submitButton.addEventListener('click', async () => {
         alert('Введите имя');
         return;
     }
-    if (!phone) {
+    if (!phone || phone.length < 10) {
         alert('Введите корректный телефон (минимум 10 цифр)');
         return;
     }
@@ -188,6 +197,18 @@ submitButton.addEventListener('click', async () => {
     orderId.textContent = payload.id;
 
     // Переключаем UI на экран успеха.
-    orderForm.style.display = 'none';
-    orderSuccess.classList.add('is-visible');
+    toggleOrderSuccess(false)
 });
+
+function toggleOrderSuccess(showForm) {
+    if (showForm) {
+        orderForm.style.display = 'block';
+        orderSuccess.classList.remove('is-visible');
+        nameInput.value = "";
+        phoneInput.value = "";
+        commentInput.value = "";
+    } else if (!showForm) {
+        orderForm.style.display = 'none';
+        orderSuccess.classList.add('is-visible');
+    }
+};
